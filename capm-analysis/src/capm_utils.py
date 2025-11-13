@@ -4,6 +4,7 @@ from typing import Iterable
 
 import pandas as pd
 import yfinance as yf
+from pandas_datareader import data as pdr
 
 @dataclass
 class CapmResult:
@@ -21,7 +22,15 @@ class CapmResult:
 
 def _to_datetime(x) -> pd.DatetimeIndex:
     return pd.to_datetime(x).tz_localize(None)
-    
+
+def rf_rate(start: str, end: str | None = None, series: str = "TB3MS"):
+    rf_m = pdr.DataReader(series, "fred", start, end).squeeze()
+    rf_m.index = pd.to_datetime(rf_m.index).tz_localize(None)
+
+    rf_daily = (rf_m / 100.0) / 360.0
+    rf_daily.name = "rf_daily"
+    return rf_daily
+
 def download_prices(tickers: Iterable[str], start: str, end: str | None = None, interval: str = "1d") -> pd.DataFrame:
     tickers = list(tickers)
     data = yf.download(tickers = tickers, start = start, end = end, interval = interval, auto_adjust = True, progress = False)
